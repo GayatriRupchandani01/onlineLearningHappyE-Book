@@ -1,0 +1,45 @@
+.glass-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 11px;
+    max-width: 60rem; 
+    margin-top: 3vh;
+  }
+
+  .form-group {
+    height: 3vh;
+  }
+
+  .form-details{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+ 
+  input {
+    margin-bottom: 2px;
+  }
+
+  .error {
+    color: red;
+    font-size: small;
+  visibility: visible;
+  }
+  
+
+  .all-courses{
+    background-color:rgb(214, 209, 206);
+    display: flex;
+    justify-content: center;
+    justify-items: center;
+    align-items: center;
+    width: 12vw;
+    height: 6vh;
+    margin-left: 36vw;
+    margin-top: 2vh;
+  }
+
+  CardHeader {
+    font-size: 100%;
+  }
