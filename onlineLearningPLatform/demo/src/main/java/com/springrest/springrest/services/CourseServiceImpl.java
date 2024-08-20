@@ -36,10 +36,16 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     public CourseEntity addCourse(CourseDto course, Long instructorId) {
-        CourseEntity courseEntity = course.toCourseEntity(course);
-        courseEntity.setInstructorId(instructorId);
-        courseRepository.save(courseEntity);
-        return courseEntity;
+        CourseEntity existingCourseEntity = courseRepository.findByCourseCode(course.getCourseCode());
+        if (existingCourseEntity != null) {
+            throw new MyException("Course already exists");
+        }
+
+        CourseEntity newCourseEntity = course.toCourseEntity(course);
+        newCourseEntity.setInstructorId(instructorId);
+        courseRepository.save(newCourseEntity);
+
+        return newCourseEntity;
     }
 
     @Override
@@ -50,7 +56,9 @@ public class CourseServiceImpl implements CourseService{
         existingCourseEntity.setTitle(course.getTitle());
         existingCourseEntity.setAuthor(course.getAuthor());
         existingCourseEntity.setDescription(course.getDescription());
+        existingCourseEntity.setCourseCode(course.getCourseCode());
         existingCourseEntity.setUrl(course.getUrl());
+        existingCourseEntity.setPreRequisites(course.getPreRequisites());
         return courseRepository.save(existingCourseEntity);
     }
     

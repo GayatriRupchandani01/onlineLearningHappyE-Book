@@ -1,13 +1,16 @@
 package com.springrest.springrest.controller;
 
+import com.springrest.springrest.dtos.AuthResponse;
 import com.springrest.springrest.dtos.UserDto;
 import com.springrest.springrest.dtos.UserloginDto;
 import com.springrest.springrest.exceptions.MyException;
+import com.springrest.springrest.jwt.JwtUtil;
 import com.springrest.springrest.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,7 +38,9 @@ public class UserController {
         String userName = userDetails.getUserName();
         String password = userDetails.getPassword();
         UserDto user = userService.validateUser(userName, password);
-        return  new ResponseEntity<>(user, HttpStatus.OK);
+        String token = JwtUtil.generateToken(userName);
+
+        return ResponseEntity.ok(new AuthResponse(user, token));
         }
         catch (Exception e) {
 

@@ -2,6 +2,7 @@ package com.springrest.springrest.controller;
 
 import com.springrest.springrest.dtos.CourseDto;
 import com.springrest.springrest.entities.CourseEntity;
+import com.springrest.springrest.exceptions.MyException;
 import com.springrest.springrest.services.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,8 +49,8 @@ public class CourseController {
             CourseEntity courseCreated = courseService.addCourse(course,instructorId);
             return new ResponseEntity<>(courseCreated,HttpStatus.CREATED);
         }
-        catch(Exception e) {
-            return new ResponseEntity<>("Course addition failed", HttpStatus.NOT_ACCEPTABLE);
+        catch(MyException e) {
+            return new ResponseEntity<>("Course addition failed", HttpStatus.CONFLICT);
         }
     }
 
