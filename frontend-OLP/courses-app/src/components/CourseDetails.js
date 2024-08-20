@@ -10,22 +10,24 @@ import { IoPersonCircle } from "react-icons/io5";
 import "./CourseDetails.css";
 import Cookies from "js-cookie";
 import myImage from "../assets/Elearning_platform.jpg";
+import { useAuth } from "./contexts/AuthContext";
 
 const CourseDetails = () => {
-  let navigate = useNavigate();
-
-  const [courseDetails, setCourseDetails] = useState([]);
-
   const location = useLocation();
 
   const courseId = location.state?.id;
-  console.log(courseId);
+  const { authToken } = useAuth();
 
+  useEffect(() => {
+    document.title = "Course Details || Learn courses with Happy E-Book";
+  }, []);
+
+  let navigate = useNavigate();
+
+  const [courseDetails, setCourseDetails] = useState([]);
   const role = Cookies.get("role");
-  console.log(role);
 
-  const name = Cookies.get("name");
-  console.log(name);
+  const userId = Cookies.get("userId");
 
   useEffect(() => {
     if (!courseId || courseId === "undefined") {
@@ -33,7 +35,11 @@ const CourseDetails = () => {
     }
     const fetchCourseDetails = async () => {
       try {
-        const response = await axios.get(`${base_url}/courses/${courseId}`);
+        const response = await axios.get(`${base_url}/courses/${courseId}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
         setCourseDetails(response.data);
       } catch (error) {
         console.error("Error fetching course details:", error);
@@ -42,7 +48,7 @@ const CourseDetails = () => {
     };
 
     fetchCourseDetails();
-  }, [courseId]);
+  }, [courseId, authToken]);
 
   if (!courseDetails) {
     return <div>Loading...</div>;
@@ -57,13 +63,25 @@ const CourseDetails = () => {
   const enrollUser = async (courseId) => {
     const userId = Cookies.get("userId");
     try {
-      const response = await axios.post("http://localhost:8080/enrollments", {
-        userId,
-        courseId,
-      });
-      toast.success("enrolled successfully", response.data);
+      const response = await axios.post(
+        "http://localhost:8080/enrollments",
+        {
+          userId,
+          courseId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      toast.success("Enrolled successfully", response.data);
     } catch (error) {
-      toast.error("Error enrolling user", error);
+      if (error.response && error.response.status === 409) {
+        toast.error("You have already enrolled in this course.");
+      } else {
+        toast.error("Something went wrong!");
+      }
     }
   };
 
@@ -71,20 +89,19 @@ const CourseDetails = () => {
     enrollUser(courseId);
   };
 
-  const authorName = courseDetails.author;
-
   const isAuthor = () => {
-    const nameN = name.trim().toLowerCase;
-    const authorNameN = name.trim().toLowerCase;
-    return nameN === authorNameN;
+    const userIdN = parseInt(userId);
+    const instructorId = courseDetails.instructorId;
+    const result = instructorId === userIdN;
+    return result;
   };
 
-  console.log(isAuthor() && role === "AUTHOR");
+  const isAuthorvar = isAuthor();
 
-  const shouldShowEditButton = (role, name, authorName) => {
+  const shouldShowEditButton = (role) => {
     if (role === "ADMIN") {
       return true;
-    } else if (role === "AUTHOR" && isAuthor()) {
+    } else if (isAuthorvar) {
       return true;
     } else if (role === "STUDENT") {
       return false;
@@ -93,23 +110,32 @@ const CourseDetails = () => {
     }
   };
 
-  const showButton = shouldShowEditButton();
-  console.log("show button" + showButton);
+  const shouldEnroll = (role) => {
+    if (role === "ADMIN" || role === "AUTHOR") {
+      return false;
+    } else if (role === "STUDENT") {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  const showButton = shouldShowEditButton(role);
+  const showEnroll = shouldEnroll(role);
 
   return (
     <>
       <NavBarSecond />
+
       <Container className="course-details-container">
         <Row>
-          <Col md="8" className="course-details">
+          <Col md="6" className="course-details">
             <div className="course-details-panel">
-              <button
-                className="btn bg-primary"
-                id="button-enroll"
-                onClick={handleEnroll}
-              >
-                Enroll
-              </button>
+              {showEnroll && (
+                <button className="button-enroll" onClick={handleEnroll}>
+                  Enroll
+                </button>
+              )}
               {showButton && (
                 <button
                   onClick={() => {
@@ -140,7 +166,7 @@ const CourseDetails = () => {
               </p>
             </div>
           </Col>
-          <Col md="4" className="course-image">
+          <Col md="6" className="course-image">
             <img src={myImage} alt="Course" />
           </Col>
         </Row>

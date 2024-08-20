@@ -1,7 +1,7 @@
 .course-details-container {
     width: 100%;
     max-width: 100px;
-    margin-top: 20vh;
+    margin-top: 13vh;
     padding: 20px;
   }
    
@@ -10,6 +10,7 @@
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    height: 50vh;
   }
    
   .course-details-panel h2 {
@@ -30,24 +31,26 @@
     margin-bottom: 15px;
   } 
    
-  .course-details-panel a {
-    color: #007bff;
-    text-decoration: none;
-  }
-   
-  .course-details-panel a:hover {
-    text-decoration: underline;
-  }
-
-  .course-details-panel .btn {
+  .button-enroll {
     float: right;
+    background-color: rgb(65, 152, 149);
+    color: white;
+    height: 4vh;
+    border: none;
+    border-radius: 10%;
   }
  
+  .button-enroll :hover {
+    float: right;
+    background-color: rgb(48, 73, 74);
+  }
+ 
+
   .button-edit {
     float: right;
     margin-bottom: 10px;
     margin-right: 1vw;
-    height: 2.5vw;
+    height: 4.2vh;
     border-radius: 7%;
 }
 
@@ -65,6 +68,6 @@
 }
 .course-image img {
   max-width: 100%;
-  height: auto;
+  height: 50vh;
   border-radius: 10px; 
 }

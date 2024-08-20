@@ -12,42 +12,54 @@ import {
 import base_url from "../api/bootapi";
 import { toast } from "react-toastify";
 import { IoPersonCircle } from "react-icons/io5";
+import { useAuth } from "./contexts/AuthContext";
 import Cookies from "js-cookie";
 
 const Course = ({ course, update }) => {
   let navigate = useNavigate();
   const role = Cookies.get("role");
+  const userId = Cookies.get("userId");
+  const { authToken } = useAuth();
 
   const confirmAndDelete = (id) => {
-    axios.get(`${base_url}/enrollments/course/${id}`).then(
-      (response) => {
-        if (response) {
-          const deletionConfirm = window.confirm(
-            "Some people have enrolled for this course, Do you really want to delete this"
-          );
-          if (deletionConfirm) {
+    axios
+      .get(`${base_url}/enrollments/course/${id}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+      .then(
+        (response) => {
+          if (response.data == true) {
+            toast.error(
+              "Couldn't delete the course as some people have already enrolled for this course."
+            );
+          } else {
             deleteCourse(id);
           }
-        } else {
-          deleteCourse(id);
+        },
+        (error) => {
+          toast.error("Something went wrong");
         }
-      },
-      (error) => {
-        toast.error("Something wnet wrong");
-      }
-    );
+      );
   };
 
   const deleteCourse = (id) => {
-    axios.delete(`${base_url}/courses/${id}`).then(
-      (response) => {
-        toast.success("Course deleted successfully");
-        update(id);
-      },
-      (error) => {
-        toast.error("Course not deleted, Server problem");
-      }
-    );
+    axios
+      .delete(`${base_url}/courses/${id}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+      .then(
+        (response) => {
+          toast.success("Course deleted successfully");
+          update(id);
+        },
+        (error) => {
+          toast.error("Course not deleted, Server problem");
+        }
+      );
   };
 
   function handleClick(id) {
@@ -56,13 +68,36 @@ const Course = ({ course, update }) => {
     });
   }
 
+  const isAuthor = () => {
+    const userIdN = parseInt(userId);
+    const instructorId = course.instructorId;
+    const result = instructorId === userIdN;
+    return result;
+  };
+
+  const isAuthorvar = isAuthor();
+
+  const shouldShowEditButton = (role) => {
+    if (role === "ADMIN") {
+      return true;
+    } else if (isAuthorvar) {
+      return true;
+    } else if (role === "STUDENT") {
+      return false;
+    } else {
+      return false;
+    }
+  };
+
+  const showButton = shouldShowEditButton(role);
+
   return (
     <Card
       style={{
         width: "19rem",
         height: "9rem",
         float: "left",
-        backgroundColor: "#f2f1e7",
+        backgroundColor: "#61c0bf",
       }}
       className="m-2 p-1"
     >
@@ -75,7 +110,7 @@ const Course = ({ course, update }) => {
           {course.author}
         </CardText>
         <Container className="text-center">
-          {role !== "STUDENT" && (
+          {showButton && (
             <Button
               color="danger"
               onClick={() => {
@@ -86,8 +121,7 @@ const Course = ({ course, update }) => {
             </Button>
           )}
           <Button
-            color="warning"
-            style={{ marginLeft: "10px" }}
+            style={{ marginLeft: "10px", backgroundColor: "#085f63" }}
             onClick={() => {
               handleClick(course.id);
             }}

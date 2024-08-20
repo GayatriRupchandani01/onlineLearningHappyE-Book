@@ -22,6 +22,9 @@ const Navbar = () => {
       </div>
       <div className="navbar-buttons">
         <button className="navbar-button" onClick={() => navigate("/")}>
+          Home
+        </button>
+        <button className="navbar-button" onClick={() => navigate("/login")}>
           Login
         </button>
         <button

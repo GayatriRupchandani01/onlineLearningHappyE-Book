@@ -5,6 +5,7 @@
     padding: 11px;
     max-width: 60rem; 
     margin-top: 3vh;
+    margin-bottom: 1vh;
   }
 
   .form-group {
@@ -29,7 +30,6 @@
   
 
   .all-courses{
-    background-color:rgb(214, 209, 206);
     display: flex;
     justify-content: center;
     justify-items: center;

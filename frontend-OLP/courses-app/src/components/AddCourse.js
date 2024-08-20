@@ -15,10 +15,14 @@ import NavBarSecond from "./NavBarSecond";
 import { Card, CardBody } from "reactstrap";
 import "./AddCourse.css";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { useAuth } from "./contexts/AuthContext"; // Import useAuth hook
 
 const AddCourse = () => {
+  const { authToken } = useAuth(); // Get the token from AuthContext
+
   useEffect(() => {
-    document.title = "Add Courses || Learn courses with E-Kaksha";
+    document.title = "Add Courses || Learn courses with Happy E-Book";
   }, []);
 
   const [course, setCourse] = useState({
@@ -30,76 +34,118 @@ const AddCourse = () => {
     author: "",
   });
   const [errors, setErrors] = useState({});
+  const [instructorId, setInstructorId] = useState([]);
 
-  useNavigate();
+  const navigate = useNavigate();
 
   const handleCourseDetailsChange = (e) => {
     const { name, value } = e.target;
     setCourse((prev) => ({ ...prev, [name]: value }));
 
-    if (name === "courseCode" && !value) {
-      errors.courseCode = "Code is required";
-    } else if (name === "courseCode" && !/^[a-zA-Z0-9]+$/.test(value)) {
-      errors.courseCode = "Code must be alphanumeric";
-    } else {
-      errors.courseCode = "";
+    if (name === "courseCode") {
+      if (!value) {
+        errors.courseCode = "Code is required";
+      } else if (value.startsWith(" ")) {
+        errors.courseCode = "First character cannot be a space";
+      } else if (!/^[0-9]+$/.test(value)) {
+        errors.courseCode = "Code must contain only numbers";
+      } else {
+        errors.courseCode = "";
+      }
     }
 
-    if (name === "title" && !value) {
-      errors.title = "Title is required";
-    } else if (name === "title" && !/^[A-Za-z\s]+$/.test(value)) {
-      errors.title = "Title must contain only alphabets";
-    } else {
-      errors.title = "";
+    if (name === "title") {
+      if (!value) {
+        errors.title = "Title is required";
+      } else if (value.startsWith(" ")) {
+        errors.title = "First character cannot be a space";
+      } else if (!/^[A-Za-z\s]+$/.test(value)) {
+        errors.title = "Title must contain only alphabets";
+      } else {
+        errors.title = "";
+      }
     }
 
     if (name === "description" && !value) {
       errors.description = "Description is required";
+    } else if (value.startsWith(" ")) {
+      errors.description = "First character cannot be a space";
     } else {
       errors.description = "";
     }
 
-    if (name === "url" && !value) {
-      errors.url = "Course URL is required";
-    } else if (
-      name === "url" &&
-      !/^(https?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=]+$/.test(
-        value
-      )
-    ) {
-      errors.url = "Invalid URL format";
-    } else {
-      errors.url = "";
+    if (name === "url") {
+      if (!value) {
+        errors.url = "Course URL is required";
+      } else if (value.startsWith(" ")) {
+        errors.value = "First character cannot be a space";
+      } else if (
+        !/^(https?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=]+$/.test(
+          value
+        )
+      ) {
+        errors.url = "Invalid URL format";
+      } else {
+        errors.url = "";
+      }
     }
 
-    if (name === "author" && !value) {
-      errors.author = "Author is required";
-    } else if (name === "author" && !/^[A-Za-z\s]+$/.test(value)) {
-      errors.author = "Author must contain only alphabets";
-    } else {
-      errors.author = "";
+    if (name === "author") {
+      if (!value) {
+        errors.author = "Author is required";
+      } else if (value.startsWith(" ")) {
+        errors.author = "First character cannot be a space";
+      } else if (!/^[A-Za-z\s]+$/.test(value)) {
+        errors.author = "Author must contain only alphabets";
+      } else {
+        errors.author = "";
+      }
     }
 
     setErrors((prev) => ({ ...prev, ...errors }));
   };
 
+  useEffect(() => {
+    const userId = Cookies.get("userId");
+    if (userId) {
+      setInstructorId(userId);
+      console.log(userId + " user ");
+      console.log(instructorId + " instructor");
+    }
+  }, []);
+
   const handleForm = (e) => {
-    console.log(course);
-    postDataToServer(course);
     e.preventDefault();
+    if (Object.values(errors).some((error) => error)) {
+      toast.error("Please provide valid input before submitting.");
+      return;
+    }
+    postDataToServer(course, instructorId);
   };
 
-  const postDataToServer = (data) => {
-    axios.post(`${base_url}/courses`, data).then(
-      (response) => {
-        console.log(response);
-        toast.success("Course added successfully");
-      },
-      (error) => {
-        console.log(error);
-        toast.error("Error!, Something went Wrong");
-      }
-    );
+  const postDataToServer = (data, instructorId) => {
+    axios
+      .post(`${base_url}/courses/${instructorId}`, data, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+      .then(
+        (response) => {
+          console.log(response);
+          toast.success("Course added successfully");
+          navigate("/view-courses");
+        },
+        (error) => {
+          if (error.response && error.response.status === 409) {
+            toast.error("Course already exist with this courseCode");
+          } else if (errors != "") {
+            toast.error("Course already exist with this courseCode");
+          } else {
+            toast.error("Something went wrong!");
+          }
+        }
+      );
   };
 
   return (
@@ -119,7 +165,9 @@ const AddCourse = () => {
                   name="title"
                   placeholder="Enter title here"
                   id="title"
+                  maxLength={30}
                   onChange={handleCourseDetailsChange}
+                  required
                 />
                 {errors.title && <span className="error">{errors.title}</span>}
               </FormGroup>
@@ -133,7 +181,9 @@ const AddCourse = () => {
                       name="courseCode"
                       placeholder="Enter code here"
                       id="courseCode"
+                      maxLength={6}
                       onChange={handleCourseDetailsChange}
+                      required
                     />
                     {errors.courseCode && (
                       <span className="error">{errors.courseCode}</span>
@@ -150,7 +200,9 @@ const AddCourse = () => {
                       name="author"
                       placeholder="Enter author here"
                       id="author"
+                      maxLength={25}
                       onChange={handleCourseDetailsChange}
+                      required
                     />
                     {errors.author && (
                       <span className="error">{errors.author}</span>
@@ -167,8 +219,10 @@ const AddCourse = () => {
                   name="description"
                   placeholder="Enter description here"
                   id="description"
+                  maxLength={250}
                   style={{ height: 100 }}
                   onChange={handleCourseDetailsChange}
+                  required
                 />
                 {errors.description && (
                   <span className="error">{errors.description}</span>
@@ -183,6 +237,7 @@ const AddCourse = () => {
                   placeholder="Enter course url here"
                   id="url"
                   onChange={handleCourseDetailsChange}
+                  required
                 />
                 {errors.url && <span className="error">{errors.url}</span>}
               </FormGroup>
@@ -194,6 +249,7 @@ const AddCourse = () => {
                   name="preRequisites"
                   placeholder="Enter course preRequisites here"
                   id="preRequisites"
+                  maxLength={250}
                   style={{ height: 100 }}
                   onChange={handleCourseDetailsChange}
                 />
@@ -202,13 +258,6 @@ const AddCourse = () => {
               <Container className="text-center">
                 <Button type="submit" color="success">
                   Add Course
-                </Button>
-                <Button
-                  type="reset"
-                  color="warning"
-                  style={{ marginLeft: "20px" }}
-                >
-                  Clear
                 </Button>
               </Container>
             </Form>

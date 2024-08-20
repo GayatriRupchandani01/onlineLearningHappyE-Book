@@ -15,15 +15,17 @@ import base_url from "../api/bootapi";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavBarSecond from "./NavBarSecond";
+import { useAuth } from "./contexts/AuthContext";
 import "./AddCourse.css";
 
 const UpdateCourse = () => {
-  useEffect(() => {
-    document.title = "Update Course || Learn courses with E-Kaksha";
-  }, []);
-
   const location = useLocation();
   const navigate = useNavigate();
+  const { authToken } = useAuth();
+
+  useEffect(() => {
+    document.title = "Update Courses || Learn courses with Happy E-Book";
+  }, []);
 
   const courseId = location.state?.id;
   console.log(courseId);
@@ -39,8 +41,16 @@ const UpdateCourse = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    if (!courseId) {
+      toast.error("Couldn't fetch course");
+      return;
+    }
     axios
-      .get(`${base_url}/courses/${courseId}`)
+      .get(`${base_url}/courses/${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
       .then((response) => {
         setCourseDetails(response.data);
       })
@@ -48,54 +58,59 @@ const UpdateCourse = () => {
         console.log(error);
         toast.error("Error!, Something went Wrong");
       });
-  }, [courseId]);
+  }, [courseId, authToken]);
 
   const handleCourseDetailsChange = (e) => {
     const { name, value } = e.target;
 
     setCourseDetails((prev) => ({ ...prev, [name]: value }));
 
-    if (name === "courseCode" && !value) {
-      errors.courseCode = "Code is required";
-    } else if (name === "courseCode" && !/^[a-zA-Z0-9]+$/.test(value)) {
-      errors.courseCode = "Code must be alphanumeric";
-    } else {
-      errors.courseCode = "";
-    }
-
-    if (name === "title" && !value) {
-      errors.title = "Title is required";
-    } else if (name === "title" && !/^[A-Za-z\s]+$/.test(value)) {
-      errors.title = "Title must contain only alphabets";
-    } else {
-      errors.title = "";
+    if (name === "title") {
+      if (!value) {
+        errors.title = "Title is required";
+      } else if (value.startsWith(" ")) {
+        errors.title = "First character cannot be a space";
+      } else if (!/^[A-Za-z\s]+$/.test(value)) {
+        errors.title = "Title must contain only alphabets";
+      } else {
+        errors.title = "";
+      }
     }
 
     if (name === "description" && !value) {
       errors.description = "Description is required";
+    } else if (value.startsWith(" ")) {
+      errors.description = "First character cannot be a space";
     } else {
       errors.description = "";
     }
 
-    if (name === "url" && !value) {
-      errors.url = "Course URL is required";
-    } else if (
-      name === "url" &&
-      !/^(https?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=]+$/.test(
-        value
-      )
-    ) {
-      errors.url = "Invalid URL format";
-    } else {
-      errors.url = "";
+    if (name === "url") {
+      if (!value) {
+        errors.url = "Course URL is required";
+      } else if (value.startsWith(" ")) {
+        errors.url = "First character cannot be a space";
+      } else if (
+        !/^(https?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=]+$/.test(
+          value
+        )
+      ) {
+        errors.url = "Invalid URL format";
+      } else {
+        errors.url = "";
+      }
     }
 
-    if (name === "author" && !value) {
-      errors.author = "Author is required";
-    } else if (name === "author" && !/^[A-Za-z\s]+$/.test(value)) {
-      errors.author = "Author must contain only alphabets";
-    } else {
-      errors.author = "";
+    if (name === "author") {
+      if (!value) {
+        errors.author = "Author is required";
+      } else if (value.startsWith(" ")) {
+        errors.author = "First character cannot be a space";
+      } else if (!/^[A-Za-z\s]+$/.test(value)) {
+        errors.author = "Author must contain only alphabets";
+      } else {
+        errors.author = "";
+      }
     }
 
     setErrors((prev) => ({ ...prev, ...errors }));
@@ -103,12 +118,23 @@ const UpdateCourse = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (Object.values(errors).some((error) => error)) {
+      toast.error("Please provide valid input before submitting.");
+      return;
+    }
     axios
-      .put(`${base_url}/courses/${courseId}`, courseDetails)
+      .put(`${base_url}/courses/${courseId}`, courseDetails, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
       .then((response) => {
         console.log("Course updated successfully:", response.data);
         navigate("/view-courses");
         toast.success("Course updated successfully");
+        navigate(`/view-course-details/${courseId}`, {
+          state: { id: courseId },
+        });
       })
       .catch((error) => {
         console.error("Error updating course:", error);
@@ -132,13 +158,10 @@ const UpdateCourse = () => {
                   placeholder="Enter title here"
                   name="title"
                   id="title"
+                  maxLength={30}
                   value={courseDetails.title}
-                  onChange={(e) => {
-                    setCourseDetails({
-                      ...courseDetails,
-                      title: e.target.value,
-                    });
-                  }}
+                  onChange={handleCourseDetailsChange}
+                  required
                 />
                 {errors.title && <span className="error">{errors.title}</span>}
               </FormGroup>
@@ -153,12 +176,7 @@ const UpdateCourse = () => {
                       id="courseCode"
                       name="courseCode"
                       value={courseDetails.courseCode}
-                      onChange={(e) => {
-                        setCourseDetails({
-                          ...courseDetails,
-                          courseCode: e.target.value,
-                        });
-                      }}
+                      readOnly
                     />
                     {errors.courseCode && (
                       <span className="error">{errors.courseCode}</span>
@@ -174,13 +192,10 @@ const UpdateCourse = () => {
                       placeholder="Enter author here"
                       id="author"
                       name="author"
+                      maxLength={25}
                       value={courseDetails.author}
-                      onChange={(e) => {
-                        setCourseDetails({
-                          ...courseDetails,
-                          author: e.target.value,
-                        });
-                      }}
+                      onChange={handleCourseDetailsChange}
+                      required
                     />
                     {errors.author && (
                       <span className="error">{errors.author}</span>
@@ -194,15 +209,12 @@ const UpdateCourse = () => {
                   type="textarea"
                   placeholder="Enter description here"
                   id="description"
+                  maxLength={250}
                   name="description"
                   style={{ height: 100 }}
                   value={courseDetails.description}
-                  onChange={(e) => {
-                    setCourseDetails({
-                      ...courseDetails,
-                      description: e.target.value,
-                    });
-                  }}
+                  onChange={handleCourseDetailsChange}
+                  required
                 />
                 {errors.description && (
                   <span className="error">{errors.description}</span>
@@ -217,9 +229,8 @@ const UpdateCourse = () => {
                   id="url"
                   name="url"
                   value={courseDetails.url}
-                  onChange={(e) => {
-                    setCourseDetails({ ...courseDetails, url: e.target.value });
-                  }}
+                  onChange={handleCourseDetailsChange}
+                  required
                 />
                 {errors.url && <span className="error">{errors.url}</span>}
               </FormGroup>
@@ -229,27 +240,17 @@ const UpdateCourse = () => {
                   type="textarea"
                   placeholder="Enter course preRequisites here"
                   id="preRequisites"
+                  name="preRequisites"
+                  maxLength={250}
                   value={courseDetails.preRequisites}
                   style={{ height: 100 }}
-                  onChange={(e) => {
-                    setCourseDetails({
-                      ...courseDetails,
-                      preRequisites: e.target.value,
-                    });
-                  }}
+                  onChange={handleCourseDetailsChange}
                 />
               </FormGroup>
 
               <Container className="text-center">
                 <Button type="submit" color="success">
                   Save
-                </Button>
-                <Button
-                  type="reset"
-                  color="warning"
-                  style={{ marginLeft: "20px" }}
-                >
-                  Clear
                 </Button>
               </Container>
             </Form>
